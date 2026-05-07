@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin — CollegeBuddy Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #09090f;
+    --surface: #111118;
+    --surface2: #181822;
+    --border: #23232f;
+    --accent: #a78bfa;
+    --accent2: #f472b6;
+    --green: #34d399;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --text: #f1f0f7;
+    --muted: #6b7280;
+    --msg-out: #7c3aed;
+    --msg-in: #1e1e2e;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* AUTH */
+  #auth-screen {
+    position: fixed; inset: 0; z-index: 100;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px; padding: 48px 40px;
+    width: 380px; text-align: center;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.7);
+    animation: slideUp 0.5s ease;
+  }
+  @keyframes slideUp { from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)} }
+  .auth-logo {
+    width: 72px; height: 72px; border-radius: 20px;
+    background: linear-gradient(135deg,#7c3aed,#db2777);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; margin: 0 auto 20px;
+    box-shadow: 0 12px 40px rgba(124,58,237,0.5);
+  }
+  .auth-card h1 { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; margin-bottom:6px; }
+  .auth-card .badge { display:inline-block; background:rgba(124,58,237,0.2); color:var(--accent); font-size:12px; padding:3px 10px; border-radius:20px; margin-bottom:20px; }
+  .auth-card p { color:var(--muted); font-size:14px; margin-bottom:28px; }
+  .google-btn {
+    width:100%; padding:14px 20px; background:white; color:#1a1a1a;
+    border:none; border-radius:12px; font-family:'DM Sans',sans-serif;
+    font-size:15px; font-weight:500; display:flex; align-items:center;
+    justify-content:center; gap:10px; cursor:pointer; transition:all 0.2s;
+  }
+  .google-btn:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(255,255,255,0.1); }
+  .google-btn svg { width:20px; height:20px; flex-shrink:0; }
+  #auth-error { color:var(--red); font-size:13px; margin-top:14px; display:none; }
+
+  /* APP */
+  #app { display:none; height:100vh; flex-direction:column; }
+  #app.visible { display:flex; }
+
+  /* TOP NAV */
+  .topnav {
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:10px 20px; display:flex; align-items:center; gap:14px; flex-shrink:0;
+  }
+  .topnav .logo { font-family:'Syne',sans-serif; font-weight:800; font-size:18px; flex:1; }
+  .topnav .logo span { color:var(--accent); }
+  .admin-badge { background:rgba(124,58,237,0.2); color:var(--accent); font-size:11px; padding:3px 10px; border-radius:20px; font-weight:600; }
+  .stats-bar { display:flex; gap:20px; }
+  .stat { text-align:center; }
+  .stat-val { font-family:'Syne',sans-serif; font-weight:800; font-size:18px; color:var(--accent); }
+  .stat-label { font-size:10px; color:var(--muted); }
+  .nav-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#7c3aed,#db2777); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; overflow:hidden; cursor:pointer; }
+  .nav-avatar img { width:100%; height:100%; object-fit:cover; }
+  .signout-btn { background:transparent; border:1px solid var(--border); color:var(--muted); padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer; transition:all 0.2s; }
+  .signout-btn:hover { color:var(--text); border-color:var(--accent); }
+
+  /* LAYOUT */
+  .main { display:flex; flex:1; overflow:hidden; }
+
+  /* LEFT SIDEBAR */
+  .sidebar {
+    width:300px; background:var(--surface);
+    border-right:1px solid var(--border);
+    display:flex; flex-direction:column; flex-shrink:0;
+  }
+  .sidebar-tabs { display:flex; border-bottom:1px solid var(--border); }
+  .stab {
+    flex:1; padding:10px 6px; text-align:center;
+    font-size:12px; font-weight:600; color:var(--muted);
+    cursor:pointer; border-bottom:2px solid transparent;
+    transition:all 0.2s; white-space:nowrap;
+  }
+  .stab.active { color:var(--accent); border-bottom-color:var(--accent); }
+  .contact-list { flex:1; overflow-y:auto; }
+  .contact-list::-webkit-scrollbar { width:3px; }
+  .contact-list::-webkit-scrollbar-thumb { background:var(--border); }
+  .contact-item {
+    display:flex; align-items:center; gap:10px;
+    padding:11px 14px; cursor:pointer; transition:background 0.15s;
+    border-bottom:1px solid rgba(255,255,255,0.02);
+  }
+  .contact-item:hover { background:var(--surface2); }
+  .contact-item.active { background:rgba(167,139,250,0.08); border-left:3px solid var(--accent); }
+  .c-avatar {
+    width:40px; height:40px; border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:15px; flex-shrink:0; position:relative; overflow:hidden;
+  }
+  .c-avatar img { width:100%; height:100%; object-fit:cover; }
+  .online-dot { width:10px; height:10px; border-radius:50%; background:var(--green); border:2px solid var(--surface); position:absolute; bottom:0; right:0; }
+  .c-info { flex:1; min-width:0; }
+  .c-name { font-weight:600; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .c-sub { font-size:11px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .unread-badge { background:var(--accent); color:white; font-size:10px; font-weight:700; min-width:18px; height:18px; border-radius:9px; display:flex; align-items:center; justify-content:center; padding:0 4px; }
+  .loading { color:var(--muted); font-size:13px; padding:20px; text-align:center; }
+
+  /* MIDDLE: CHAT AREA */
+  .chat-area { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+  .chat-header {
+    padding:12px 18px; background:var(--surface);
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:12px; flex-shrink:0;
+  }
+  .chat-header-info { flex:1; }
+  .chat-header-name { font-family:'Syne',sans-serif; font-weight:700; font-size:15px; }
+  .chat-header-status { font-size:12px; color:var(--green); }
+  .header-actions { display:flex; gap:8px; }
+  .action-btn {
+    background:var(--surface2); border:1px solid var(--border);
+    color:var(--text); padding:6px 12px; border-radius:8px;
+    font-size:12px; cursor:pointer; transition:all 0.2s;
+  }
+  .action-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .action-btn.danger:hover { border-color:var(--red); color:var(--red); }
+
+  .messages { flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:8px; }
+  .messages::-webkit-scrollbar { width:4px; }
+  .messages::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+  .msg-bubble { max-width:72%; padding:10px 14px; border-radius:18px; font-size:14px; line-height:1.5; animation:msgIn 0.2s ease; position:relative; }
+  @keyframes msgIn { from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)} }
+  .msg-out { background:var(--msg-out); align-self:flex-end; border-bottom-right-radius:4px; }
+  .msg-in { background:var(--msg-in); align-self:flex-start; border-bottom-left-radius:4px; }
+  .msg-meta { font-size:10px; color:rgba(255,255,255,0.4); margin-top:4px; display:flex; gap:6px; align-items:center; }
+  .msg-sender { font-size:11px; color:var(--accent2); font-weight:600; margin-bottom:2px; }
+  .delete-msg { background:none; border:none; color:rgba(255,255,255,0.2); cursor:pointer; padding:0 2px; font-size:12px; transition:color 0.15s; }
+  .delete-msg:hover { color:var(--red); }
+  .empty-chat { flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:12px; color:var(--muted); }
+  .empty-chat .icon { font-size:48px; opacity:0.3; }
+
+  .input-area { padding:14px 18px; background:var(--surface); border-top:1px solid var(--border); display:flex; gap:10px; align-items:flex-end; flex-shrink:0; }
+  .msg-input { flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:11px 16px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; resize:none; outline:none; max-height:120px; transition:border-color 0.2s; }
+  .msg-input:focus { border-color:var(--accent); }
+  .msg-input::placeholder { color:var(--muted); }
+  .send-btn { width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg,#7c3aed,#db2777); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; flex-shrink:0; }
+  .send-btn:hover { transform:scale(1.05); box-shadow:0 4px 16px rgba(124,58,237,0.4); }
+  .send-btn svg { width:20px; height:20px; fill:white; }
+
+  /* RIGHT PANEL */
+  .right-panel { width:280px; background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; overflow:hidden; }
+  .panel-header { padding:14px 16px; border-bottom:1px solid var(--border); font-family:'Syne',sans-serif; font-weight:700; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; display:flex; justify-content:space-between; align-items:center; }
+  .panel-content { flex:1; overflow-y:auto; padding:12px; }
+  .panel-content::-webkit-scrollbar { width:3px; }
+  .panel-content::-webkit-scrollbar-thumb { background:var(--border); }
+
+  /* CREATE GROUP */
+  .create-group-btn {
+    width:100%; padding:10px; background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(219,39,119,0.2));
+    border:1px dashed var(--accent); border-radius:10px; color:var(--accent);
+    font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; margin-bottom:12px;
+  }
+  .create-group-btn:hover { background:rgba(124,58,237,0.2); }
+
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; display:flex; align-items:center; justify-content:center; }
+  .modal { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:28px; width:420px; max-height:80vh; overflow-y:auto; animation:slideUp 0.3s ease; }
+  .modal h2 { font-family:'Syne',sans-serif; font-weight:800; font-size:20px; margin-bottom:16px; }
+  .modal input, .modal textarea {
+    width:100%; background:var(--surface2); border:1px solid var(--border);
+    border-radius:10px; padding:10px 14px; color:var(--text);
+    font-family:'DM Sans',sans-serif; font-size:14px; outline:none; margin-bottom:12px;
+  }
+  .modal input:focus, .modal textarea:focus { border-color:var(--accent); }
+  .modal-label { font-size:12px; color:var(--muted); margin-bottom:6px; display:block; }
+  .user-checkbox { display:flex; align-items:center; gap:10px; padding:8px; border-radius:8px; cursor:pointer; transition:background 0.15s; }
+  .user-checkbox:hover { background:var(--surface2); }
+  .user-checkbox input { width:16px; height:16px; accent-color:var(--accent); cursor:pointer; }
+  .modal-actions { display:flex; gap:10px; margin-top:16px; }
+  .modal-btn { flex:1; padding:10px; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.2s; border:none; }
+  .modal-btn.primary { background:linear-gradient(135deg,#7c3aed,#db2777); color:white; }
+  .modal-btn.primary:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(124,58,237,0.3); }
+  .modal-btn.secondary { background:var(--surface2); border:1px solid var(--border); color:var(--text); }
+
+  /* BROADCAST */
+  .broadcast-area { padding:12px; }
+  .broadcast-input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:10px 14px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; resize:none; outline:none; height:80px; }
+  .broadcast-input:focus { border-color:var(--yellow); }
+  .broadcast-btn { width:100%; margin-top:8px; padding:10px; background:linear-gradient(135deg,rgba(251,191,36,0.2),rgba(251,191,36,0.1)); border:1px solid var(--yellow); border-radius:10px; color:var(--yellow); font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+  .broadcast-btn:hover { background:rgba(251,191,36,0.2); }
+  .broadcast-msg { background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.3); border-radius:12px; padding:8px 12px; font-size:12px; color:var(--yellow); margin-bottom:6px; }
+
+  /* USER CARDS in right panel */
+  .user-card { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:10px; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+  .user-card-info { flex:1; }
+  .user-card-name { font-size:13px; font-weight:600; }
+  .user-card-email { font-size:11px; color:var(--muted); }
+  .online-indicator { width:8px; height:8px; border-radius:50%; background:var(--muted); }
+  .online-indicator.online { background:var(--green); }
+
+  /* WELCOME */
+  .welcome-panel { flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:12px; color:var(--muted); }
+  .welcome-panel .big-icon { font-size:56px; opacity:0.3; }
+  .welcome-panel p { font-size:13px; }
+
+  .tag-group { font-size:11px; background:rgba(167,139,250,0.15); color:var(--accent); padding:2px 8px; border-radius:20px; }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">🛡️</div>
+    <h1>Admin Dashboard</h1>
+    <div class="badge">CollegeBuddy Admin</div>
+    <p>Sign in with your admin Google account to continue.</p>
+    <button class="google-btn" onclick="signInWithGoogle()">
+      <svg viewBox="0 0 24 24">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Sign in with Google
+    </button>
+    <div id="auth-error">⛔ Access denied. Admin only.</div>
+  </div>
+</div>
+
+<!-- GROUP MODAL -->
+<div class="modal-overlay" id="group-modal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h2>➕ Create Group</h2>
+    <label class="modal-label">Group Name</label>
+    <input type="text" id="group-name" placeholder="e.g. CS Department 2024"/>
+    <label class="modal-label">Select Members</label>
+    <div id="member-list" style="max-height:220px;overflow-y:auto;margin-bottom:4px"></div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
+      <button class="modal-btn primary" onclick="createGroup()">Create Group</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="topnav">
+    <div class="logo">College<span>Buddy</span> <span class="admin-badge">Admin</span></div>
+    <div class="stats-bar">
+      <div class="stat"><div class="stat-val" id="stat-users">0</div><div class="stat-label">Users</div></div>
+      <div class="stat"><div class="stat-val" id="stat-online">0</div><div class="stat-label">Online</div></div>
+      <div class="stat"><div class="stat-val" id="stat-groups">0</div><div class="stat-label">Groups</div></div>
+    </div>
+    <div class="nav-avatar" id="nav-avatar">A</div>
+    <button class="signout-btn" onclick="signOut()">Sign out</button>
+  </div>
+
+  <div class="main">
+    <!-- LEFT SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-tabs">
+        <div class="stab active" id="stab-users" onclick="switchSTab('users')">👥 Users</div>
+        <div class="stab" id="stab-groups" onclick="switchSTab('groups')">🗂 Groups</div>
+        <div class="stab" id="stab-requests" onclick="switchSTab('requests')">💬 Chats</div>
+      </div>
+      <div class="contact-list" id="sidebar-list">
+        <div class="loading">Loading...</div>
+      </div>
+    </div>
+
+    <!-- CHAT AREA -->
+    <div class="chat-area" id="chat-area">
+      <div class="welcome-panel">
+        <div class="big-icon">🛡️</div>
+        <p>Select a user or group to start</p>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+      <div class="panel-header">
+        📢 Broadcast
+      </div>
+      <div class="broadcast-area">
+        <textarea class="broadcast-input" id="broadcast-text" placeholder="Send a message to ALL users..."></textarea>
+        <button class="broadcast-btn" onclick="sendBroadcast()">📢 Send to Everyone</button>
+      </div>
+      <div class="panel-header" style="margin-top:8px">
+        🟢 Online Users
+      </div>
+      <div class="panel-content" id="online-users-panel">
+        <div class="loading">Loading...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
+import { getDatabase, ref, push, onValue, set, remove, get, serverTimestamp, off }
+  from "https://www.gstatic.com/firebasejs/10.12.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAJIxWLfO1om0JfjgqjJgYon6lt6lW5eVg",
+  authDomain: "collegebuddychat.firebaseapp.com",
+  databaseURL: "https://collegebuddychat-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "collegebuddychat",
+  storageBucket: "collegebuddychat.firebasestorage.app",
+  messagingSenderId: "693745482604",
+  appId: "1:693745482604:web:36ff21445733086fb25149"
+};
+
+const ADMIN_EMAIL = "codewithharshit7live@gmail.com";
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+let adminUser = null;
+let allUsers = {};
+let messagesListener = null;
+let currentChatPath = null;
+let currentSTab = 'users';
+
+// ── AUTH ──────────────────────────────────────────────
+window.signInWithGoogle = async () => {
+  const provider = new GoogleAuthProvider();
+  try {
+    const result = await signInWithPopup(auth, provider);
+    if (result.user.email !== ADMIN_EMAIL) {
+      document.getElementById('auth-error').style.display = 'block';
+      await fbSignOut(auth);
+    }
+  } catch(e) { alert("Error: " + e.message); }
+};
+
+window.signOut = () => fbSignOut(auth);
+
+onAuthStateChanged(auth, async user => {
+  if (user && user.email === ADMIN_EMAIL) {
+    adminUser = user;
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    const av = document.getElementById('nav-avatar');
+    if (user.photoURL) av.innerHTML = `<img src="${user.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+    initAdmin();
+  } else {
+    adminUser = null;
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('app').classList.remove('visible');
+  }
+});
+
+function initAdmin() {
+  loadStats();
+  loadOnlinePanel();
+  switchSTab('users');
+}
+
+// ── STATS ──────────────────────────────────────────────
+function loadStats() {
+  onValue(ref(db,'users'), snap => {
+    let total=0, online=0;
+    snap.forEach(c => {
+      const u = c.val();
+      if (u.email === ADMIN_EMAIL) return;
+      total++;
+      if (u.online) online++;
+    });
+    document.getElementById('stat-users').textContent = total;
+    document.getElementById('stat-online').textContent = online;
+    allUsers = {};
+    snap.forEach(c => { if(c.val().email!==ADMIN_EMAIL) allUsers[c.key]=c.val(); });
+  });
+  onValue(ref(db,'groups'), snap => {
+    document.getElementById('stat-groups').textContent = snap.size || 0;
+  });
+}
+
+// ── ONLINE PANEL ───────────────────────────────────────
+function loadOnlinePanel() {
+  const panel = document.getElementById('online-users-panel');
+  onValue(ref(db,'users'), snap => {
+    panel.innerHTML = '';
+    snap.forEach(child => {
+      const u = child.val();
+      if (u.email === ADMIN_EMAIL) return;
+      const card = document.createElement('div');
+      card.className = 'user-card';
+      card.innerHTML = `
+        <div class="c-avatar" style="width:32px;height:32px;font-size:13px;background:${strToColor(u.name)}">
+          ${u.photo ? `<img src="${u.photo}"/>` : u.name?.[0]?.toUpperCase()}
+        </div>
+        <div class="user-card-info">
+          <div class="user-card-name">${u.name}</div>
+          <div class="user-card-email">${u.online ? '🟢 Online' : '⚫ Offline'}</div>
+        </div>`;
+      panel.appendChild(card);
+    });
+    if (!panel.children.length) panel.innerHTML = '<div class="loading">No users yet.</div>';
+  });
+}
+
+// ── SIDEBAR TABS ───────────────────────────────────────
+window.switchSTab = (tab) => {
+  currentSTab = tab;
+  document.querySelectorAll('.stab').forEach(t => t.classList.remove('active'));
+  document.getElementById('stab-'+tab).classList.add('active');
+  if (tab === 'users') loadUsersList();
+  else if (tab === 'groups') loadGroupsList();
+  else if (tab === 'requests') loadAdminChats();
+};
+
+// ── USERS LIST ─────────────────────────────────────────
+function loadUsersList() {
+  const list = document.getElementById('sidebar-list');
+  list.innerHTML = '<div class="loading">Loading...</div>';
+  onValue(ref(db,'users'), snap => {
+    list.innerHTML = '';
+    snap.forEach(child => {
+      const u = child.val();
+      if (u.email === ADMIN_EMAIL) return;
+      const chatId = `${u.uid}_admin`;
+      const item = document.createElement('div');
+      item.className = 'contact-item';
+      item.innerHTML = `
+        <div class="c-avatar" style="background:${strToColor(u.name)}">
+          ${u.photo ? `<img src="${u.photo}"/>` : u.name?.[0]?.toUpperCase()}
+          ${u.online ? '<div class="online-dot"></div>' : ''}
+        </div>
+        <div class="c-info">
+          <div class="c-name">${u.name}</div>
+          <div class="c-sub">${u.email}</div>
+        </div>`;
+      item.onclick = () => openUserChat(u, chatId, item);
+      list.appendChild(item);
+    });
+    if (!list.children.length) list.innerHTML = '<div class="loading">No users yet.</div>';
+  });
+}
+
+// ── GROUPS LIST ────────────────────────────────────────
+function loadGroupsList() {
+  const list = document.getElementById('sidebar-list');
+  list.innerHTML = '';
+  const createBtn = document.createElement('button');
+  createBtn.className = 'create-group-btn';
+  createBtn.textContent = '➕ Create New Group';
+  createBtn.style.margin = '10px';
+  createBtn.style.width = 'calc(100% - 20px)';
+  createBtn.onclick = () => openGroupModal();
+  list.appendChild(createBtn);
+  onValue(ref(db,'groups'), snap => {
+    // Remove old group items (keep create btn)
+    while (list.children.length > 1) list.removeChild(list.lastChild);
+    snap.forEach(child => {
+      const g = child.val(); const gid = child.key;
+      const item = document.createElement('div');
+      item.className = 'contact-item';
+      item.innerHTML = `
+        <div class="c-avatar" style="background:${strToColor(g.name)}">
+          ${g.name?.[0]?.toUpperCase()}
+        </div>
+        <div class="c-info">
+          <div class="c-name">${g.name} <span class="tag-group">Group</span></div>
+          <div class="c-sub">${Object.keys(g.members||{}).length} members</div>
+        </div>
+        <button onclick="event.stopPropagation();deleteGroup('${gid}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px;" title="Delete group">🗑</button>`;
+      item.onclick = () => openGroupChat(g, gid, item);
+      list.appendChild(item);
+    });
+  });
+}
+
+// ── ADMIN CHATS LIST ───────────────────────────────────
+function loadAdminChats() {
+  const list = document.getElementById('sidebar-list');
+  list.innerHTML = '<div class="loading">Loading chats...</div>';
+  onValue(ref(db,'users'), snap => {
+    list.innerHTML = '';
+    snap.forEach(child => {
+      const u = child.val();
+      if (u.email === ADMIN_EMAIL) return;
+      const chatId = `${u.uid}_admin`;
+      const item = document.createElement('div');
+      item.className = 'contact-item';
+      item.innerHTML = `
+        <div class="c-avatar" style="background:${strToColor(u.name)}">
+          ${u.photo ? `<img src="${u.photo}"/>` : u.name?.[0]?.toUpperCase()}
+          ${u.online ? '<div class="online-dot"></div>' : ''}
+        </div>
+        <div class="c-info">
+          <div class="c-name">${u.name}</div>
+          <div class="c-sub">Admin Chat</div>
+        </div>`;
+      item.onclick = () => openUserChat(u, chatId, item);
+      list.appendChild(item);
+    });
+    if (!list.children.length) list.innerHTML = '<div class="loading">No user chats yet.</div>';
+  });
+}
+
+// ── OPEN CHATS ─────────────────────────────────────────
+function openUserChat(user, chatId, itemEl) {
+  clearChat(); currentChatPath = `adminchats/${chatId}`;
+  document.querySelectorAll('.contact-item').forEach(i=>i.classList.remove('active'));
+  if(itemEl) itemEl.classList.add('active');
+  renderChatHeader(user.photo, user.name, user.online?'🟢 Online':'Offline', user.name[0]);
+  listenMessages(currentChatPath, false, user.uid);
+  renderInput(currentChatPath);
+}
+
+function openGroupChat(group, gid, itemEl) {
+  clearChat(); currentChatPath = `groups/${gid}/messages`;
+  document.querySelectorAll('.contact-item').forEach(i=>i.classList.remove('active'));
+  if(itemEl) itemEl.classList.add('active');
+  renderChatHeader(null, group.name, `Group · ${Object.keys(group.members||{}).length} members`, group.name[0], true, gid);
+  listenMessages(currentChatPath, true);
+  renderInput(currentChatPath);
+}
+
+function renderChatHeader(photo, name, status, initial, isGroup=false, gid='') {
+  const area = document.getElementById('chat-area');
+  area.innerHTML = `
+    <div class="chat-header">
+      <div class="c-avatar" style="width:38px;height:38px;background:${strToColor(name)}">
+        ${photo ? `<img src="${photo}"/>` : initial}
+      </div>
+      <div class="chat-header-info">
+        <div class="chat-header-name">${name}</div>
+        <div class="chat-header-status">${status}</div>
+      </div>
+      <div class="header-actions">
+        ${isGroup ? `<button class="action-btn danger" onclick="deleteGroup('${gid}')">🗑 Delete Group</button>` : ''}
+      </div>
+    </div>
+    <div class="messages" id="messages"></div>
+    <div class="input-area" id="input-area"></div>`;
+}
+
+function renderInput(path) {
+  document.getElementById('input-area').innerHTML = `
+    <textarea class="msg-input" id="msg-input" placeholder="Type a message as Admin..." rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg('${path}')}"
+      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+    <button class="send-btn" onclick="sendMsg('${path}')">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>`;
+}
+
+function listenMessages(path, isGroup) {
+  if (messagesListener) { off(ref(db, messagesListener)); messagesListener = null; }
+  messagesListener = path;
+  onValue(ref(db, path), snap => {
+    const container = document.getElementById('messages');
+    if (!container) return;
+    container.innerHTML = '';
+    if (!snap.exists()) {
+      container.innerHTML = '<div class="empty-chat"><div class="icon">💬</div><p>No messages yet.</p></div>';
+      return;
+    }
+    snap.forEach(child => {
+      const m = child.val(); const mid = child.key;
+      const isMe = m.senderId === 'admin' || m.senderEmail === ADMIN_EMAIL;
+      const div = document.createElement('div');
+      div.className = 'msg-bubble ' + (isMe ? 'msg-out' : 'msg-in');
+      div.innerHTML = `
+        ${isGroup && !isMe ? `<div class="msg-sender">${m.senderName}</div>` : ''}
+        ${m.text}
+        <div class="msg-meta">
+          ${formatTime(m.timestamp)}
+          <button class="delete-msg" onclick="deleteMsg('${path}','${mid}')" title="Delete">🗑</button>
+        </div>`;
+      container.appendChild(div);
+    });
+    container.scrollTop = container.scrollHeight;
+  });
+}
+
+window.sendMsg = async (path) => {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = ''; input.style.height = 'auto';
+  await push(ref(db, path), {
+    text, senderId: 'admin',
+    senderEmail: ADMIN_EMAIL,
+    senderName: 'Admin',
+    senderPhoto: adminUser.photoURL || '',
+    timestamp: Date.now()
+  });
+};
+
+window.deleteMsg = async (path, mid) => {
+  if (!confirm('Delete this message?')) return;
+  await remove(ref(db, `${path}/${mid}`));
+};
+
+// ── GROUPS ─────────────────────────────────────────────
+let groupUsersSnap = {};
+
+function openGroupModal() {
+  document.getElementById('group-modal').style.display = 'flex';
+  const ml = document.getElementById('member-list');
+  ml.innerHTML = '';
+  Object.entries(allUsers).forEach(([uid, u]) => {
+    const row = document.createElement('label');
+    row.className = 'user-checkbox';
+    row.innerHTML = `
+      <input type="checkbox" value="${uid}"/>
+      <div class="c-avatar" style="width:28px;height:28px;font-size:11px;background:${strToColor(u.name)}">
+        ${u.name?.[0]?.toUpperCase()}
+      </div>
+      <span style="font-size:13px">${u.name}</span>`;
+    ml.appendChild(row);
+  });
+}
+
+window.closeModal = () => { document.getElementById('group-modal').style.display = 'none'; };
+
+window.createGroup = async () => {
+  const name = document.getElementById('group-name').value.trim();
+  if (!name) { alert('Enter a group name.'); return; }
+  const checked = document.querySelectorAll('#member-list input:checked');
+  const members = {};
+  checked.forEach(c => { members[c.value] = true; });
+  if (Object.keys(members).length === 0) { alert('Select at least one member.'); return; }
+  const gid = push(ref(db,'groups')).key;
+  await set(ref(db,`groups/${gid}`), {
+    name, members, open: false,
+    createdAt: Date.now(), createdBy: ADMIN_EMAIL
+  });
+  closeModal();
+  document.getElementById('group-name').value = '';
+  switchSTab('groups');
+};
+
+window.deleteGroup = async (gid) => {
+  if (!confirm('Delete this group?')) return;
+  await remove(ref(db, `groups/${gid}`));
+  clearChat();
+};
+
+// ── BROADCAST ──────────────────────────────────────────
+window.sendBroadcast = async () => {
+  const text = document.getElementById('broadcast-text').value.trim();
+  if (!text) return;
+  if (!confirm(`Send "${text}" to ALL users?`)) return;
+  const usersSnap = await get(ref(db,'users'));
+  const promises = [];
+  usersSnap.forEach(child => {
+    const u = child.val();
+    if (u.email === ADMIN_EMAIL) return;
+    const chatId = `${u.uid}_admin`;
+    promises.push(push(ref(db,`adminchats/${chatId}`), {
+      text: `📢 ${text}`, senderId:'admin',
+      senderName:'Admin', senderEmail:ADMIN_EMAIL,
+      timestamp: Date.now(), broadcast: true
+    }));
+  });
+  await Promise.all(promises);
+  document.getElementById('broadcast-text').value = '';
+  alert(`✅ Broadcast sent to ${promises.length} users!`);
+};
+
+// ── UTILS ──────────────────────────────────────────────
+function clearChat() {
+  if (messagesListener) { off(ref(db, messagesListener)); messagesListener = null; }
+  currentChatPath = null;
+  document.getElementById('chat-area').innerHTML = `
+    <div class="welcome-panel">
+      <div class="big-icon">🛡️</div>
+      <p>Select a user or group to start</p>
+    </div>`;
+}
+
+function strToColor(str='') {
+  let hash=0;
+  for(let c of str) hash=c.charCodeAt(0)+((hash<<5)-hash);
+  const colors=['#7c3aed','#db2777','#059669','#d97706','#2563eb','#dc2626','#7c3aed'];
+  return colors[Math.abs(hash)%colors.length];
+}
+
+function formatTime(ts) {
+  if(!ts) return '';
+  return new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+}
+</script>
+</body>
+</html>
