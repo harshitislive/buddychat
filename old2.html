@@ -29,6 +29,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
 
+  /* SCREENS */
   .screen { position: fixed; inset: 0; display: none; flex-direction: column; background: var(--bg); }
   .screen.active { display: flex; }
 
@@ -99,6 +100,7 @@
   .ci-time { font-size: 11px; color: var(--muted); flex-shrink: 0; }
   .ci-row2 { display: flex; justify-content: space-between; align-items: center; }
   .ci-sub  { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+  .ci-badge { background: var(--unread); color: white; font-size: 11px; font-weight: 700; min-width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 0 5px; flex-shrink: 0; }
   .chip { font-size: 10px; padding: 1px 6px; border-radius: 20px; font-weight: 700; margin-left: 5px; vertical-align: middle; }
   .chip-group { background: rgba(26,122,74,0.12); color: var(--primary); }
   .chip-admin { background: rgba(18,140,126,0.12); color: var(--teal); }
@@ -121,6 +123,7 @@
     color: var(--muted); font-size: 10px; font-weight: 700;
     background: none; border: none; font-family: 'Nunito', sans-serif;
     transition: color 0.15s; -webkit-tap-highlight-color: transparent;
+    position: relative;
   }
   .nav-tab.active { color: var(--primary); }
   .nav-tab svg { width: 22px; height: 22px; stroke-width: 2; }
@@ -148,6 +151,8 @@
     padding: 10px 10px 6px;
     display: flex; flex-direction: column; gap: 3px;
     background-color: #e5ddd5;
+    background-image: url('bg-pattern.png');
+    background-size: cover; background-attachment: local;
   }
   .messages-area::-webkit-scrollbar { display: none; }
 
@@ -176,43 +181,12 @@
 
   .broadcast-bub { background: #fff8e1; border: 1px solid #ffe082; border-radius: 10px; padding: 8px 16px; text-align: center; font-size: 13px; color: #7a6100; margin: 4px auto; max-width: 88%; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
 
-  /* ── INPUT ROW (FIXED) ── */
-  .input-row {
-    padding: 7px 8px;
-    background: var(--bg);
-    display: flex;
-    align-items: center; /* vertically center button with input box */
-    gap: 8px;
-    flex-shrink: 0;
-  }
-  .input-box {
-    flex: 1;
-    background: white;
-    border-radius: 24px;
-    display: flex;
-    align-items: flex-end;
-    padding: 8px 14px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    min-height: 46px; /* matches send button height */
-  }
-  .msg-input {
-    flex: 1; border: none; outline: none; resize: none;
-    font-family: 'Nunito', sans-serif; font-size: 15px; color: var(--text);
-    max-height: 100px; line-height: 1.4; background: transparent;
-  }
+  /* Input */
+  .input-row { padding: 7px 8px; background: var(--bg); display: flex; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+  .input-box { flex: 1; background: white; border-radius: 24px; display: flex; align-items: flex-end; padding: 8px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .msg-input { flex: 1; border: none; outline: none; resize: none; font-family: 'Nunito', sans-serif; font-size: 15px; color: var(--text); max-height: 100px; line-height: 1.4; background: transparent; }
   .msg-input::placeholder { color: var(--muted); }
-  .send-btn {
-    width: 46px; height: 46px;
-    border-radius: 50%;
-    background: var(--primary);
-    border: none;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(26,122,74,0.4);
-    transition: background 0.15s, transform 0.1s;
-    /* fixed: no extra margin, aligns naturally with align-items:center on parent */
-  }
+  .send-btn { width: 46px; height: 46px; border-radius: 50%; background: var(--primary); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; box-shadow: 0 2px 8px rgba(26,122,74,0.4); transition: background 0.15s, transform 0.1s; }
   .send-btn:active { transform: scale(0.92); background: var(--primary-dk); }
   .send-btn svg { stroke: white; }
 
@@ -268,7 +242,7 @@
     <button class="hbtn" id="search-toggle">
       <i data-lucide="search" style="width:20px;height:20px"></i>
     </button>
-    <div class="nav-avatar" id="nav-avatar">U</div>
+    <div class="nav-avatar" id="nav-avatar" id="nav-avatar-btn">U</div>
   </div>
 
   <div class="search-wrap hide" id="search-wrap">
@@ -309,10 +283,12 @@
       <div class="ch-name" id="ch-name">Chat</div>
       <div class="ch-sub"  id="ch-sub">…</div>
     </div>
-    <!-- Phone icon removed -->
+    <button class="hbtn"><i data-lucide="phone" style="width:20px;height:20px"></i></button>
     <button class="hbtn"><i data-lucide="more-vertical" style="width:20px;height:20px"></i></button>
   </div>
-  <div class="messages-area" id="messages-area"></div>
+  <div class="messages-area" id="messages-area">
+    <div class="spinner"></div>
+  </div>
   <div class="input-row">
     <div class="input-box">
       <textarea class="msg-input" id="msg-input" placeholder="Message" rows="1"></textarea>
@@ -347,6 +323,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, onA
 import { getDatabase, ref, push, onValue, set, serverTimestamp, onDisconnect, off }
   from "https://www.gstatic.com/firebasejs/10.12.1/firebase-database.js";
 
+/* ─── CONFIG ─────────────────────────────────────────── */
 const FB = {
   apiKey: "AIzaSyAJIxWLfO1om0JfjgqjJgYon6lt6lW5eVg",
   authDomain: "collegebuddychat.firebaseapp.com",
@@ -362,13 +339,14 @@ const app  = initializeApp(FB);
 const auth = getAuth(app);
 const db   = getDatabase(app);
 
+/* ─── STATE ──────────────────────────────────────────── */
 let me              = null;
 let activeTab       = 'chats';
 let chatPath        = null;
 let msgUnsubscribe  = null;
 let listUnsubscribes = [];
 
-/* ─── UTILS ─── */
+/* ─── UTILS ──────────────────────────────────────────── */
 const $ = id => document.getElementById(id);
 
 function colorFor(s = '') {
@@ -401,14 +379,14 @@ function autoGrow(el) {
 }
 function setAvatar(el, name, photo) {
   if (photo) {
-    el.innerHTML = `<img src="${photo}" onerror="this.style.display='none';this.parentElement.textContent='${initials(name)}'"/>`;
+    el.innerHTML = `<img src="${photo}" onerror="this.parentElement.textContent='${initials(name)}';this.parentElement.style.background='${colorFor(name)}'"/>`;
   } else {
     el.textContent = initials(name);
     el.style.background = colorFor(name);
   }
 }
 
-/* ─── AUTH ─── */
+/* ─── AUTH ───────────────────────────────────────────── */
 $('google-signin-btn').addEventListener('click', async () => {
   try { await signInWithPopup(auth, new GoogleAuthProvider()); }
   catch(e) { alert('Sign-in error: '+e.message); }
@@ -425,6 +403,7 @@ onAuthStateChanged(auth, async user => {
 
   me = user;
 
+  // Save profile
   await set(ref(db,`users/${me.uid}`), {
     uid: me.uid, name: me.displayName||'User',
     email: me.email, photo: me.photoURL||'',
@@ -432,8 +411,11 @@ onAuthStateChanged(auth, async user => {
   });
   onDisconnect(ref(db,`users/${me.uid}/online`)).set(false);
 
+  // Nav avatar
   const nav = $('nav-avatar');
   setAvatar(nav, me.displayName||'U', me.photoURL);
+
+  // Profile sheet
   $('pname').textContent  = me.displayName||'User';
   $('pemail').textContent = me.email;
   setAvatar($('pava'), me.displayName||'U', me.photoURL);
@@ -442,11 +424,11 @@ onAuthStateChanged(auth, async user => {
   loadTab('chats');
 });
 
-/* ─── PROFILE SHEET ─── */
-$('nav-avatar').addEventListener('click', ()=>{ $('profile-overlay').classList.add('open'); lucide.createIcons(); });
+/* ─── PROFILE SHEET ──────────────────────────────────── */
+$('nav-avatar').addEventListener('click', ()=>{ $('profile-overlay').classList.add('open'); });
 $('profile-overlay').addEventListener('click', e=>{ if(e.target===$('profile-overlay')) $('profile-overlay').classList.remove('open'); });
 
-/* ─── TABS ─── */
+/* ─── TABS ───────────────────────────────────────────── */
 window.switchTab = function(tab) {
   activeTab = tab;
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
@@ -468,7 +450,7 @@ function loadTab(tab) {
   else if (tab==='admin')  loadAdmin();
 }
 
-/* ─── USERS LIST ─── */
+/* ─── USERS LIST ─────────────────────────────────────── */
 function loadUsers() {
   const scroll = $('list-scroll');
   scroll.innerHTML = '<div class="spinner"></div>';
@@ -481,12 +463,13 @@ function loadUsers() {
       if (u.uid===me.uid || u.email===ADMIN_EMAIL) return;
       rows.push(u);
     });
-    if (!rows.length) {
-      scroll.innerHTML = `<div class="empty-state"><i data-lucide="users" style="width:44px;height:44px"></i><p>No users yet.<br>Ask friends to join!</p></div>`;
-      lucide.createIcons(); return;
-    }
+    if (!rows.length) { scroll.innerHTML = `<div class="empty-state"><i data-lucide="users" style="width:44px;height:44px"></i><p>No users yet.<br>Ask friends to join!</p></div>`; lucide.createIcons(); return; }
     rows.forEach(u => {
-      const el = makeContactEl({ name: u.name, sub: u.online?'Online':'Offline', photo: u.photo, online: !!u.online });
+      const el = makeContactEl({
+        name: u.name, sub: u.online?'Online':'Offline',
+        photo: u.photo, online: !!u.online
+      });
+      // ✅ CRITICAL FIX: bind click with closure capturing u
       const cid = [me.uid, u.uid].sort().join('_');
       function openThis() {
         openChat({ path:`dms/${cid}`, name:u.name, photo:u.photo||'', sub:u.online?'Online':'Offline', isGroup:false });
@@ -500,7 +483,7 @@ function loadUsers() {
   listUnsubscribes.push(unsub);
 }
 
-/* ─── GROUPS LIST ─── */
+/* ─── GROUPS LIST ────────────────────────────────────── */
 function loadGroups() {
   const scroll = $('list-scroll');
   scroll.innerHTML = '<div class="spinner"></div>';
@@ -514,10 +497,7 @@ function loadGroups() {
       if (!members[me.uid] && !g.open) return;
       rows.push({ ...g, gid: c.key });
     });
-    if (!rows.length) {
-      scroll.innerHTML = `<div class="empty-state"><i data-lucide="users" style="width:44px;height:44px"></i><p>No groups yet.<br>Ask admin to create one!</p></div>`;
-      lucide.createIcons(); return;
-    }
+    if (!rows.length) { scroll.innerHTML = `<div class="empty-state"><i data-lucide="users" style="width:44px;height:44px"></i><p>No groups yet.<br>Ask admin to create one!</p></div>`; lucide.createIcons(); return; }
     rows.forEach(g => {
       const mc = Object.keys(g.members||{}).length;
       const el = makeContactEl({ name:g.name, sub:`${mc} members`, photo:'', chip:'group' });
@@ -534,7 +514,7 @@ function loadGroups() {
   listUnsubscribes.push(unsub);
 }
 
-/* ─── ADMIN LIST ─── */
+/* ─── ADMIN LIST ─────────────────────────────────────── */
 function loadAdmin() {
   const scroll = $('list-scroll');
   scroll.innerHTML = '';
@@ -549,11 +529,12 @@ function loadAdmin() {
   lucide.createIcons();
 }
 
-/* ─── BUILD CONTACT ELEMENT ─── */
+/* ─── BUILD CONTACT ELEMENT ──────────────────────────── */
 function makeContactEl({ name, sub, photo, online, chip }) {
   const div = document.createElement('div');
   div.className = 'contact-item';
 
+  // Avatar
   const ava = document.createElement('div');
   ava.className = 'ci-ava';
   ava.style.background = colorFor(name);
@@ -571,6 +552,7 @@ function makeContactEl({ name, sub, photo, online, chip }) {
     ava.appendChild(dot);
   }
 
+  // Info
   const chipHtml = chip==='group' ? `<span class="chip chip-group">GROUP</span>`
                  : chip==='admin' ? `<span class="chip chip-admin">ADMIN</span>` : '';
   const info = document.createElement('div');
@@ -589,11 +571,13 @@ function makeContactEl({ name, sub, photo, online, chip }) {
   return div;
 }
 
-/* ─── OPEN CHAT ─── */
+/* ─── OPEN CHAT ──────────────────────────────────────── */
 function openChat({ path, name, photo, sub, isGroup }) {
+  // Stop old listener
   if (msgUnsubscribe) { msgUnsubscribe(); msgUnsubscribe = null; }
   chatPath = path;
 
+  // Set header
   $('ch-name').textContent = name;
   $('ch-sub').textContent  = sub;
   const ava = $('ch-ava');
@@ -604,116 +588,77 @@ function openChat({ path, name, photo, sub, isGroup }) {
     ava.textContent = initials(name);
   }
 
+  // Reset input
   const inp = $('msg-input');
   inp.value = ''; inp.style.height = 'auto';
-
-  // Show empty area immediately — no spinner
-  const area = $('messages-area');
-  area.innerHTML = '';
 
   showScreen('screen-chat');
   startListeningMessages(path, isGroup);
 }
 
-/* ─── MESSAGES LISTENER (instant, incremental) ─── */
+/* ─── MESSAGES LISTENER ──────────────────────────────── */
 function startListeningMessages(path, isGroup) {
   const area = $('messages-area');
-  const renderedKeys = new Set();
-  let lastDay = '';
-  let initialLoad = true;
+  area.innerHTML = '<div class="spinner"></div>';
 
   msgUnsubscribe = onValue(ref(db, path), snap => {
+    area.innerHTML = '';
+
     if (!snap.exists()) {
-      if (initialLoad) {
-        area.innerHTML = '';
-        const empty = document.createElement('div');
-        empty.className = 'empty-chat';
-        empty.innerHTML = `<i data-lucide="message-circle" style="width:56px;height:56px"></i><p>No messages yet.<br>Say hello! 👋</p>`;
-        area.appendChild(empty);
-        lucide.createIcons();
-      }
-      initialLoad = false;
-      return;
-    }
-
-    // On initial load: clear placeholder and render all at once
-    if (initialLoad) {
-      area.innerHTML = '';
-      renderedKeys.clear();
-      lastDay = '';
-      snap.forEach(child => {
-        renderMessage(child.key, child.val(), area, isGroup, renderedKeys, { lastDay: () => lastDay, setLastDay: d => lastDay = d });
-      });
-      initialLoad = false;
+      area.innerHTML = `<div class="empty-chat"><i data-lucide="message-circle" style="width:56px;height:56px"></i><p>No messages yet.<br>Say hello! 👋</p></div>`;
       lucide.createIcons();
-      setTimeout(() => { area.scrollTop = area.scrollHeight; }, 20);
       return;
     }
 
-    // On subsequent updates: only append NEW keys (instant, no re-render)
-    let appended = false;
+    let lastDay = '';
     snap.forEach(child => {
-      if (!renderedKeys.has(child.key)) {
-        // Remove empty state if present
-        const emptyEl = area.querySelector('.empty-chat');
-        if (emptyEl) emptyEl.remove();
+      const m = child.val();
 
-        renderMessage(child.key, child.val(), area, isGroup, renderedKeys, { lastDay: () => lastDay, setLastDay: d => lastDay = d });
-        appended = true;
+      // Date divider
+      if (m.timestamp) {
+        const day = fmtDate(m.timestamp);
+        if (day !== lastDay) {
+          lastDay = day;
+          const div = document.createElement('div');
+          div.className = 'date-divider';
+          div.innerHTML = `<span>${day}</span>`;
+          area.appendChild(div);
+        }
       }
+
+      // Broadcast message
+      if (m.broadcast) {
+        const bc = document.createElement('div');
+        bc.className = 'broadcast-bub';
+        bc.textContent = m.text;
+        area.appendChild(bc);
+        return;
+      }
+
+      const isMe = m.senderId === me.uid;
+      const row = document.createElement('div');
+      row.className = 'msg-row ' + (isMe ? 'out' : 'in');
+
+      const bub = document.createElement('div');
+      bub.className = 'bubble';
+      bub.innerHTML = `
+        ${isGroup && !isMe ? `<div class="bubble-sender">${escH(m.senderName||'')}</div>` : ''}
+        <div class="bubble-text">${escH(m.text)}</div>
+        <div class="bubble-meta">
+          <span class="bubble-time">${fmtTime(m.timestamp)}</span>
+          ${isMe ? `<span class="tick"><i data-lucide="check-check" style="width:13px;height:13px"></i></span>` : ''}
+        </div>`;
+
+      row.appendChild(bub);
+      area.appendChild(row);
     });
 
-    if (appended) {
-      lucide.createIcons();
-      setTimeout(() => { area.scrollTop = area.scrollHeight; }, 20);
-    }
+    lucide.createIcons();
+    setTimeout(() => { area.scrollTop = area.scrollHeight; }, 40);
   });
 }
 
-function renderMessage(key, m, area, isGroup, renderedKeys, dayCtx) {
-  if (renderedKeys.has(key)) return;
-  renderedKeys.add(key);
-
-  // Date divider
-  if (m.timestamp) {
-    const day = fmtDate(m.timestamp);
-    if (day !== dayCtx.lastDay()) {
-      dayCtx.setLastDay(day);
-      const div = document.createElement('div');
-      div.className = 'date-divider';
-      div.innerHTML = `<span>${day}</span>`;
-      area.appendChild(div);
-    }
-  }
-
-  // Broadcast
-  if (m.broadcast) {
-    const bc = document.createElement('div');
-    bc.className = 'broadcast-bub';
-    bc.textContent = m.text;
-    area.appendChild(bc);
-    return;
-  }
-
-  const isMe = m.senderId === me.uid;
-  const row = document.createElement('div');
-  row.className = 'msg-row ' + (isMe ? 'out' : 'in');
-
-  const bub = document.createElement('div');
-  bub.className = 'bubble';
-  bub.innerHTML = `
-    ${isGroup && !isMe ? `<div class="bubble-sender">${escH(m.senderName||'')}</div>` : ''}
-    <div class="bubble-text">${escH(m.text)}</div>
-    <div class="bubble-meta">
-      <span class="bubble-time">${fmtTime(m.timestamp)}</span>
-      ${isMe ? `<span class="tick"><i data-lucide="check-check" style="width:13px;height:13px"></i></span>` : ''}
-    </div>`;
-
-  row.appendChild(bub);
-  area.appendChild(row);
-}
-
-/* ─── SEND MESSAGE ─── */
+/* ─── SEND MESSAGE ───────────────────────────────────── */
 async function sendMessage() {
   if (!chatPath || !me) return;
   const inp = $('msg-input');
@@ -736,7 +681,7 @@ $('msg-input').addEventListener('keydown', e => {
 });
 $('msg-input').addEventListener('input', function() { autoGrow(this); });
 
-/* ─── BACK BUTTON ─── */
+/* ─── BACK BUTTON ────────────────────────────────────── */
 $('back-btn').addEventListener('click', () => {
   if (msgUnsubscribe) { msgUnsubscribe(); msgUnsubscribe = null; }
   chatPath = null;
@@ -744,7 +689,7 @@ $('back-btn').addEventListener('click', () => {
   lucide.createIcons();
 });
 
-/* ─── SEARCH ─── */
+/* ─── SEARCH ─────────────────────────────────────────── */
 $('search-toggle').addEventListener('click', () => {
   $('search-wrap').classList.toggle('hide');
   if (!$('search-wrap').classList.contains('hide')) $('search-input').focus();
@@ -758,6 +703,7 @@ window.filterContacts = function() {
   });
 };
 
+/* ─── INIT ICONS ─────────────────────────────────────── */
 lucide.createIcons();
 </script>
 </body>
